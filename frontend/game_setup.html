@@ -9,12 +9,7 @@
         body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: var(--color-bg); color: var(--color-text); font-family: var(--font-main); display: flex; justify-content: center; align-items: center; }
         .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 2; background-size: 100% 4px, 6px 100%; pointer-events: none; }
         
-        /* КНОПКА НАЗАД */
-        .back-btn {
-            position: absolute; top: 20px; left: 20px; font-size: 12px; color: #888;
-            background: transparent; border: 2px solid #444; padding: 10px; cursor: pointer;
-            font-family: inherit; z-index: 1000; transition: 0.2s;
-        }
+        .back-btn { position: absolute; top: 20px; left: 20px; font-size: 12px; color: #888; background: transparent; border: 2px solid #444; padding: 10px; cursor: pointer; font-family: inherit; z-index: 1000; transition: 0.2s; }
         .back-btn:hover { color: #ff3333; border-color: #ff3333; }
 
         .setup-container { position: relative; z-index: 10; background: rgba(0, 68, 0, 0.1); border: 4px double var(--color-text); padding: 40px; width: 500px; display: flex; flex-direction: column; gap: 30px; }
@@ -30,26 +25,73 @@
 </head>
 <body class="crt">
 
+    <audio id="bgMusic" loop>
+        <source src="main_menu.mp3" type="audio/mpeg">
+    </audio>
+
     <button class="back-btn" onclick="location.href='index.html'">◀ В МЕНЮ</button>
 
     <div class="setup-container">
         <h2>ПІДГОТОВКА</h2>
         <div class="input-group"><label>НІКНЕЙМ:</label><input type="text" id="nick" value="RECRUIT"></div>
-        <div class="input-group"><label>КІМНАТА:</label><input type="text" id="room" value="DELTA-1"></div>
+        <div class="input-group"><label>СЕКТОР:</label><input type="text" id="room" value="DELTA-1"></div>
         <div class="mode-selection">
             <button id="pve" class="mode-btn active" onclick="setMode('pve')">VS COMP</button>
             <button id="pvp" class="mode-btn" onclick="setMode('pvp')">VS HUMAN</button>
         </div>
         <button class="start-btn" onclick="go()">У БІЙ!</button>
     </div>
+    
     <script>
+        // АУДІО СИСТЕМА
+        const bgMusic = document.getElementById('bgMusic');
+        let audioStarted = false;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        document.body.addEventListener('click', () => {
+            if (!audioStarted) {
+                audioCtx.resume();
+                bgMusic.volume = 0.4;
+                bgMusic.play().catch(() => {});
+                audioStarted = true;
+            }
+        }, { once: true });
+
+        function playClickSfx() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playHoverSfx() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mouseenter', playHoverSfx);
+            btn.addEventListener('click', playClickSfx);
+        });
+
         let mode = 'pve';
         function setMode(m) { 
             mode = m; 
             document.getElementById('pve').className = m=='pve' ? 'mode-btn active' : 'mode-btn'; 
             document.getElementById('pvp').className = m=='pvp' ? 'mode-btn active' : 'mode-btn'; 
         }
-        function go() { location.href = `game.html?room=${document.getElementById('room').value}&mode=${mode}&nickname=${document.getElementById('nick').value}`; }
+        function go() { 
+            setTimeout(() => {
+                location.href = `game.html?room=${document.getElementById('room').value}&mode=${mode}&nickname=${document.getElementById('nick').value}`; 
+            }, 150); // Затримка для звуку кліку
+        }
     </script>
 </body>
 </html>
