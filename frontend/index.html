@@ -1,57 +1,477 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Морской Бой - Меню</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battleship.io - Game Jam Build</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a1a; color: white; padding-top: 50px; }
-        .menu-box { background: #333; padding: 20px; border-radius: 10px; display: inline-block; width: 400px; }
-        input, button { padding: 10px; font-size: 16px; margin: 10px; border-radius: 5px; border: none; width: 80%; }
-        button { background: #0077be; color: white; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0099ff; }
-        .room-list { margin-top: 20px; text-align: left; background: #444; padding: 10px; border-radius: 5px; }
-        .room-item { border-bottom: 1px solid #666; padding: 5px; display: flex; justify-content: space-between; }
+        :root {
+            --color-bg: #080808;
+            --color-text: #ffffff;
+            --color-text-hover: #00ff00;
+            --color-grid: #004400;
+            --color-hit: #770000;
+            --color-miss: #333333;
+            --font-main: 'Press Start 2P', cursive;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-main);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* АНАЛОГОВЫЙ ШУМ И CRT ЭФФЕКТЫ */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            gap: 5vw;
+            width: 90%;
+            max-width: 1400px;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(30px, 5vw, 60px);
+        }
+
+        /* ЛОГОТИП (Каждая буква отделена для взрыва) */
+        .logo {
+            font-size: clamp(20px, 4vw, 44px);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .normal-letter {
+            display: inline-block;
+            transition: color 0.2s;
+        }
+        
+        .normal-letter.unlocked {
+            cursor: crosshair;
+        }
+        
+        .normal-letter.unlocked:hover {
+            color: var(--color-hit); /* Подсказка игроку, что теперь их можно взрывать */
+        }
+
+        .ship-letter {
+            width: clamp(10px, 2vw, 16px);
+            height: clamp(25px, 5vw, 40px);
+            color: var(--color-text);
+            cursor: crosshair;
+            margin: 0 8px; /* Немного увеличил отступ для баланса */
+            transition: color 0.2s;
+            shape-rendering: crispEdges;
+        }
+        
+        .ship-letter:hover {
+            color: var(--color-text-hover);
+        }
+
+        /* МЕНЮ */
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 35px);
+            align-items: flex-start;
+        }
+
+        .menu-btn {
+            font-family: inherit;
+            background: none;
+            border: none;
+            color: var(--color-text);
+            font-size: clamp(14px, 2.5vw, 24px);
+            cursor: pointer;
+            padding: 5px 10px;
+            text-transform: uppercase;
+            transition: color 0.2s ease; 
+            will-change: transform; 
+            width: max-content; /* Гарантирует правильный хитбокс текста */
+        }
+
+        /* АДАПТИВНОЕ ДЕМО ПОЛЕ С ИНТЕРАКТИВОМ */
+        .board-wrapper {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: crosshair;
+        }
+
+        .board-wrapper:hover {
+            transform: scale(1.03); /* Реакция на наведение */
+        }
+
+        .demo-board {
+            display: grid;
+            grid-template-columns: repeat(10, min(4vw, 40px));
+            grid-template-rows: repeat(10, min(4vw, 40px));
+            border: 2px solid var(--color-grid);
+            background-color: rgba(0, 68, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 68, 0, 0.3);
+            transition: box-shadow 0.3s;
+        }
+
+        .board-wrapper:hover .demo-board {
+            box-shadow: 0 0 35px rgba(0, 255, 0, 0.2); /* Подсветка при наведении */
+        }
+
+        .cell {
+            border: 1px solid var(--color-grid);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.1s;
+        }
+
+        .cell.hit { background-color: var(--color-hit); }
+        .cell.miss { position: relative; }
+        .cell.miss::after {
+            content: '';
+            width: 25%; height: 25%;
+            background-color: var(--color-miss);
+            border-radius: 50%;
+        }
+
+        /* Анимация тряски экрана при клике на поле */
+        @keyframes shake {
+            0% { transform: scale(1.03) translate(2px, 1px) rotate(0deg); }
+            10% { transform: scale(1.03) translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: scale(1.03) translate(-3px, 0px) rotate(1deg); }
+            30% { transform: scale(1.03) translate(0px, 2px) rotate(0deg); }
+            40% { transform: scale(1.03) translate(1px, -1px) rotate(1deg); }
+            50% { transform: scale(1.03) translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: scale(1.03) translate(-3px, 1px) rotate(0deg); }
+            70% { transform: scale(1.03) translate(2px, 1px) rotate(-1deg); }
+            80% { transform: scale(1.03) translate(-1px, -1px) rotate(1deg); }
+            90% { transform: scale(1.03) translate(2px, 2px) rotate(0deg); }
+            100% { transform: scale(1.03) translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shake-active {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* ЧАСТИЦЫ ВЗРЫВА */
+        .particle {
+            position: absolute;
+            width: clamp(4px, 1vw, 8px);
+            height: clamp(4px, 1vw, 8px);
+            background-color: #fff;
+            pointer-events: none;
+            z-index: 100;
+        }
     </style>
 </head>
-<body>
-    <div class="menu-box">
-        <h1>⚓ BATTLESHIP ⚓</h1>
-        <input type="text" id="nickname" placeholder="Ваш никнейм" value="Игрок">
-        <input type="text" id="roomName" placeholder="Название комнаты" value="room1">
-        <br>
-        <button onclick="startGame('pvp')">Играть с другом (PvP)</button>
-        <button style="background:#be0000" onclick="startGame('pve')">Играть с Ботом (PvE)</button>
+<body class="crt">
+    <div class="noise"></div>
 
-        <div class="room-list">
-            <strong>Активные комнаты:</strong>
-            <div id="rooms-container">Загрузка...</div>
+    <div class="container">
+        <div class="left-panel">
+            <!-- Название, разбитое на буквы для пасхалки -->
+            <div class="logo" id="logoContainer">
+                <span class="normal-letter">B</span>
+                <span class="normal-letter">a</span>
+                <span class="normal-letter">t</span>
+                <span class="normal-letter">t</span>
+                <span class="normal-letter">l</span>
+                <span class="normal-letter">e</span>
+                <span class="normal-letter">s</span>
+                <span class="normal-letter">h</span>
+                <svg class="ship-letter" id="ship1" viewBox="0 0 8 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 0 h4 v2 h2 v16 h-2 v2 h-4 v-2 h-2 v-16 h2 z" fill="currentColor"/>
+                </svg>
+                <span class="normal-letter">p</span>
+                <span class="normal-letter">.</span>
+                <svg class="ship-letter" id="ship2" viewBox="0 0 8 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 0 h4 v2 h2 v16 h-2 v2 h-4 v-2 h-2 v-16 h2 z" fill="currentColor"/>
+                </svg>
+                <span class="normal-letter">o</span>
+            </div>
+
+            <!-- Меню -->
+            <div class="menu">
+                <button class="menu-btn" onclick="location.href='game_setup.html'">Грати</button>
+                <button class="menu-btn" onclick="location.href='settings.html'">Налаштування</button>
+                <button class="menu-btn" onclick="location.href='achievements.html'">Досягнення</button>
+                <button class="menu-btn" onclick="location.href='help.html'">Як грати</button>
+            </div>
+        </div>
+
+        <!-- Обертка поля для анимации тряски и наведения -->
+        <div class="board-wrapper" id="boardWrapper">
+            <div class="demo-board" id="demoBoard"></div>
         </div>
     </div>
 
     <script>
-        function startGame(mode) {
-            const nickname = document.getElementById("nickname").value;
-            const room = document.getElementById("roomName").value;
-            window.location.href = `game.html?room=${room}&mode=${mode}&nickname=${nickname}`;
+        /* =========================================
+           1. ИСПРАВЛЕННЫЙ МАГНИТ (РАССТОЯНИЕ ДО ГРАНИЦ)
+        ========================================= */
+        const buttons = document.querySelectorAll('.menu-btn');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        const triggerDistance = 120; // Радиус срабатывания уменьшен для точности
+
+        const btnData = Array.from(buttons).map(btn => ({
+            el: btn, currentX: 0, currentY: 0, targetX: 0, targetY: 0, distance: 9999
+        }));
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function lerp(start, end, factor) {
+            return start + (end - start) * factor;
         }
 
-        async function updateRooms() {
-            try {
-                const response = await fetch('/rooms');
-                const rooms = await response.json();
-                const container = document.getElementById("rooms-container");
-                container.innerHTML = rooms.length === 0 ? "Нет активных комнат" : "";
-                rooms.forEach(r => {
-                    container.innerHTML += `<div class="room-item">
-                        <span>${r.id} (${r.mode})</span>
-                        <span style="color:${r.status === 'Занята' ? '#ff4444' : '#44ff44'}">${r.status}</span>
-                    </div>`;
+        function animateButtons() {
+            btnData.forEach(data => {
+                data.targetX = 0;
+                data.targetY = 0;
+                data.el.style.color = 'var(--color-text)'; 
+                
+                const rect = data.el.getBoundingClientRect();
+                
+                // ИСПРАВЛЕНИЕ: Считаем базовые координаты без учета текущего смещения (currentX/Y),
+                // чтобы рамка не "убегала" от мыши, создавая глюки.
+                const baseLeft = rect.left - data.currentX;
+                const baseRight = rect.right - data.currentX;
+                const baseTop = rect.top - data.currentY;
+                const baseBottom = rect.bottom - data.currentY;
+
+                // Считаем расстояние до БЛИЖАЙШЕЙ ГРАНИ прямоугольника, а не до центра
+                const dx = Math.max(baseLeft - mouseX, 0, mouseX - baseRight);
+                const dy = Math.max(baseTop - mouseY, 0, mouseY - baseBottom);
+                data.distance = Math.hypot(dx, dy);
+
+                // Центр нужен только чтобы знать, в какую сторону тянуть
+                data.btnCenterX = baseLeft + (baseRight - baseLeft) / 2;
+                data.btnCenterY = baseTop + (baseBottom - baseTop) / 2;
+            });
+
+            const sorted = [...btnData].sort((a, b) => a.distance - b.distance);
+
+            for (let i = 0; i < sorted.length; i++) {
+                let data = sorted[i];
+                
+                if (data.distance < triggerDistance) {
+                    const pull = 1 - (data.distance / triggerDistance);
+                    
+                    if (i === 0) {
+                        data.targetX = (mouseX - data.btnCenterX) * 0.3 * pull;
+                        data.targetY = (mouseY - data.btnCenterY) * 0.3 * pull;
+                        data.el.style.color = 'var(--color-text-hover)';
+                    } else if (i === 1 && pull > 0.5) {
+                        data.targetX = (mouseX - data.btnCenterX) * 0.08 * pull;
+                        data.targetY = (mouseY - data.btnCenterY) * 0.08 * pull;
+                    }
+                }
+            }
+
+            btnData.forEach(data => {
+                data.currentX = lerp(data.currentX, data.targetX, 0.15);
+                data.currentY = lerp(data.currentY, data.targetY, 0.15);
+                data.el.style.transform = `translate(${data.currentX}px, ${data.currentY}px)`;
+            });
+
+            requestAnimationFrame(animateButtons);
+        }
+        
+        animateButtons();
+
+        /* =========================================
+           2. ПАСХАЛКА СО ВЗРЫВАМИ (КОРАБЛИ -> БУКВЫ)
+        ========================================= */
+        const shipLetters = document.querySelectorAll('.ship-letter');
+        const normalLetters = document.querySelectorAll('.normal-letter');
+        let shipsDestroyedCount = 0;
+        let titleUnlocked = false;
+
+        function createExplosion(x, y, color = '#ffffff') {
+            const particleCount = 12;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                document.body.appendChild(particle);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 30 + Math.random() * 60;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1, backgroundColor: '#ffffff' },
+                    { backgroundColor: color, offset: 0.5 },
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 400 + Math.random() * 300,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        // Взрыв кораблей
+        shipLetters.forEach(ship => {
+            ship.addEventListener('click', (e) => {
+                if(ship.style.opacity === '0') return;
+                
+                const rect = ship.getBoundingClientRect();
+                createExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ff0000');
+                ship.style.opacity = '0';
+                
+                shipsDestroyedCount++;
+                
+                // Проверка на разблокировку остальных букв
+                if (shipsDestroyedCount >= 2 && !titleUnlocked) {
+                    titleUnlocked = true;
+                    normalLetters.forEach(l => l.classList.add('unlocked'));
+                }
+                
+                // Восстановление кораблей через время
+                setTimeout(() => {
+                    ship.style.opacity = '1';
+                }, 5000);
+            });
+        });
+
+        // Взрыв обычных букв (только после уничтожения кораблей)
+        normalLetters.forEach(letter => {
+            letter.addEventListener('click', (e) => {
+                if (!titleUnlocked || letter.style.opacity === '0') return;
+                
+                const rect = letter.getBoundingClientRect();
+                // Буквы взрываются белым/серым цветом
+                createExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, '#cccccc');
+                letter.style.opacity = '0';
+
+                // Восстанавливаем букву
+                setTimeout(() => {
+                    letter.style.opacity = '1';
+                }, 3000);
+            });
+        });
+
+        /* =========================================
+           3. ТРЯСКА ЭКРАНА ПРИ КЛИКЕ НА ПОЛЕ
+        ========================================= */
+        const boardWrapper = document.getElementById('boardWrapper');
+        
+        boardWrapper.addEventListener('click', () => {
+            // Перезапуск анимации
+            boardWrapper.classList.remove('shake-active');
+            void boardWrapper.offsetWidth; // Магия для сброса CSS анимации
+            boardWrapper.classList.add('shake-active');
+        });
+
+        /* =========================================
+           4. ДЕМОНСТРАЦИЯ ГЕЙМПЛЕЯ
+        ========================================= */
+        const board = document.getElementById('demoBoard');
+        const cells = [];
+        const BOARD_SIZE = 100;
+        let shotsFired = 0;
+
+        for (let i = 0; i < BOARD_SIZE; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            board.appendChild(cell);
+            cells.push({ element: cell, hit: false });
+        }
+
+        function autoPlay() {
+            if (shotsFired > 40) {
+                cells.forEach(c => {
+                    c.element.className = 'cell';
+                    c.hit = false;
                 });
-            } catch (e) { console.error("Ошибка загрузки комнат"); }
+                shotsFired = 0;
+                return;
+            }
+
+            const availableCells = cells.filter(c => !c.hit);
+            if (availableCells.length === 0) return;
+
+            const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+            randomCell.hit = true;
+            shotsFired++;
+
+            let isHit = Math.random() > 0.85; 
+
+            // --- УМНАЯ ПРОВЕРКА ПРАВИЛ (БЕЗ ДИАГОНАЛЕЙ) ---
+            if (isHit) {
+                // Находим координаты текущей клетки в сетке 10x10
+                const index = cells.indexOf(randomCell);
+                const row = Math.floor(index / 10);
+                const col = index % 10;
+                
+                // Координаты смещения для 4-х диагоналей
+                const diagonals = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                
+                for (let [dr, dc] of diagonals) {
+                    const r = row + dr;
+                    const c = col + dc;
+                    // Проверяем, не вышли ли мы за пределы поля
+                    if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+                        const neighborIndex = r * 10 + c;
+                        // Если по диагонали уже есть попадание, принудительно делаем промах
+                        if (cells[neighborIndex].element.classList.contains('hit')) {
+                            isHit = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            // ----------------------------------------------
+
+            if (isHit) {
+                randomCell.element.classList.add('hit');
+            } else {
+                randomCell.element.classList.add('miss');
+            }
         }
 
-        setInterval(updateRooms, 3000); // Обновляем список каждые 3 сек
-        updateRooms();
+        setInterval(autoPlay, 800);
+
     </script>
 </body>
 </html>

@@ -2,163 +2,123 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Морський Бій - Бій</title>
+    <title>Battleship.io - Бій</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
+        :root { --color-bg: #080808; --color-text: #ffffff; --color-text-hover: #00ff00; --font-main: 'Press Start 2P', cursive; }
+        body { font-family: var(--font-main); text-align: center; background: var(--color-bg); color: white; margin: 0; padding: 20px; font-size: 10px; }
         
-        .status-bar { font-size: 1.5rem; margin: 15px; color: #f1c40f; min-height: 40px; text-shadow: 2px 2px 4px #000; }
-        .game-container { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-top: 20px; }
-        
-        /* Поле гри */
-        .board { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 0px; background: #333; padding: 5px; border: 3px solid #444; }
-        
+        /* Поле та базова клітинка */
+        .board { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 0; background: #111; padding: 5px; border: 3px solid #222; }
         .cell { 
             width: 35px; height: 35px; 
             background-image: url('/assets/Blank Square.png'); 
             background-size: 100% 100%; 
-            background-repeat: no-repeat;
-            background-position: center;
-            cursor: pointer; 
-            position: relative;
+            position: relative; 
             image-rendering: pixelated; 
+            cursor: pointer; 
         }
-
-        /* ТЕКСТУРИ КОРАБЛІВ (Зменшені до 90% та відцентровані) */
-        .ship-one, .ship-top, .ship-center, .ship-bottom {
-            background-size: 90% 90% !important;
-            background-position: center !important;
+        
+        /* КОРАБЛІ: Множинні фони. Першим йде корабель, другим - вода. */
+        .ship-one { 
+            background-image: url('/assets/ShipOne.png'), url('/assets/Blank Square.png') !important; 
+            background-size: 85% 85%, 100% 100% !important; 
+            background-position: center, center !important; 
             background-repeat: no-repeat !important;
         }
-
-        .ship-one { background-image: url('/assets/ShipOne.png') !important; }
-        .ship-top { background-image: url('/assets/ShipTop.png') !important; }
-        .ship-center { background-image: url('/assets/ShipCenter.png') !important; }
-        .ship-bottom { background-image: url('/assets/ShipBottom.png') !important; }
-
-        /* Поворот для горизонтальних */
+        .ship-top { 
+            background-image: url('/assets/ShipTop.png'), url('/assets/Blank Square.png') !important; 
+            background-size: 85% 95%, 100% 100% !important; 
+            background-position: center bottom, center !important; 
+            background-repeat: no-repeat !important;
+        }
+        .ship-center { 
+            background-image: url('/assets/ShipCenter.png'), url('/assets/Blank Square.png') !important; 
+            background-size: 85% 100%, 100% 100% !important; 
+            background-position: center, center !important; 
+            background-repeat: no-repeat !important;
+        }
+        .ship-bottom { 
+            background-image: url('/assets/ShipBottom.png'), url('/assets/Blank Square.png') !important; 
+            background-size: 85% 95%, 100% 100% !important; 
+            background-position: center top, center !important; 
+            background-repeat: no-repeat !important;
+        }
+        
         .horizontal { transform: rotate(-90deg); }
+        
+        /* ФІКС ПОПАДАННЯ: Заливаємо фон червоним і прибираємо картинку корабля знизу */
+        .cell.hit {
+            background-color: #ee2222 !important; 
+            background-image: none !important; 
+        }
 
-        /* ЧЕРВОНИЙ КВАДРАТ ПОПАДАННЯ (SquareShoot) */
-        .cell.hit::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-image: url('/assets/Square Shoot.png') !important;
-            /* Робимо квадрат влучання трохи більшим за корабель, щоб він його перекривав */
-            background-size: 109% 109% !important;
-            background-position: center !important;
+        /* Накладаємо текстуру вибуху поверх червоного фону */
+        .cell.hit::before { 
+            content: ""; 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background-image: url('/assets/Square Shoot.png') !important; 
+            background-size: 100% 100% !important; 
+            background-position: center !important; 
             background-repeat: no-repeat !important;
-            z-index: 100;
+            z-index: 100; 
             display: block !important;
-            /* Скасовуємо поворот батька, щоб квадрат завжди стояв рівно */
             transform: rotate(0deg) !important; 
         }
-
-        /* Промах */
-        .cell.miss::after {
-            content: "•";
-            color: rgba(255, 255, 255, 0.4);
-            position: absolute;
-            left: 50%; top: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            z-index: 10;
-        }
-
-        #placement-panel { background: #2c3e50; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #34495e; display: inline-block; }
-        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; margin: 5px; }
-        .btn-blue { background: #3498db; }
-        .btn-green { background: #27ae60; }
-        .btn-red { background: #c0392b; }
+        
+        .cell.miss::after { content: "•"; color: #666; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 24px; }
+        
+        /* Інтерфейс */
+        .btn { padding: 15px; margin: 5px; cursor: pointer; font-family: inherit; background: transparent; border: 2px solid white; color: white; transition: 0.2s;}
+        .btn:hover { color: var(--color-text-hover); border-color: var(--color-text-hover); }
+        .btn-green { border-color: var(--color-text-hover); color: var(--color-text-hover); }
         .hidden { display: none !important; }
+        
+        .controls-panel { margin-bottom: 20px; border: 1px solid #333; padding: 20px; display: inline-block; background: rgba(0, 40, 0, 0.1); box-shadow: 0 0 10px rgba(0, 255, 0, 0.1); }
     </style>
 </head>
 <body>
-
-    <h1 id="title">⚓ Капітан: ...</h1>
-    <div id="status" class="status-bar">Підключення...</div>
-
-    <div id="placement-panel" class="hidden">
-        <h3 id="ship-info">Розставте кораблі</h3>
-        <button class="btn btn-blue" onclick="toggleOrient()">Орієнтація: <span id="orient-text">Горизонтально</span></button>
-        <button class="btn btn-red" onclick="resetShips()">Скинути флот</button>
-        <button id="start-btn" class="btn btn-green hidden" onclick="confirmShips()">В БІЙ!</button>
+    <h2 id="status" style="color: #0f0; margin-bottom: 30px;">ПІДКЛЮЧЕННЯ...</h2>
+    
+    <div id="placement" class="hidden controls-panel">
+        <p id="info" style="margin-bottom: 15px; color: #0f0;">ОПЕРАЦІЯ: РОЗСТАВКА (4 ПАЛУБИ)</p>
+        <button class="btn" onclick="toggleOrient()">ОРІЄНТАЦІЯ: <span id="ot">ГОР</span></button>
+        <button class="btn btn-green" onclick="autoPlace()">АВТОРОЗСТАНОВКА</button>
+        <button class="btn" onclick="resetPlacement()">СКИНУТИ</button>
+        <button id="confirm-btn" class="btn hidden" onclick="confirmShips()" style="background: #004400; color: #0f0;">ПІДТВЕРДИТИ ФЛОТ</button>
     </div>
 
-    <div class="game-container">
-        <div><h3>Мій Флот</h3><div id="my-board" class="board"></div></div>
-        <div><h3>Флот Ворога</h3><div id="enemy-board" class="board"></div></div>
+    <div style="display:flex; justify-content:center; gap:60px;">
+        <div><p style="color: #888;">МІЙ ФЛОТ</p><div id="my-board" class="board"></div></div>
+        <div><p style="color: #888;">СЕКТОР ВОРОГА</p><div id="enemy-board" class="board"></div></div>
     </div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const nick = params.get('nickname') || 'Гравець';
-        const room = params.get('room') || 'room1';
-        const mode = params.get('mode') || 'pvp';
-        document.getElementById('title').innerText = `⚓ Капітан: ${nick}`;
+        const p = new URLSearchParams(window.location.search);
+        let ws, phase, isTurn, fleet = [], curIdx = 0, isHor = true, grid = Array(10).fill().map(()=>Array(10).fill(0));
+        const shipLengths = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
 
-        let ws, phase = "waiting", isTurn = false;
-        const shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
-        let currentShipIdx = 0, isHor = true, fleet = [], grid = Array(10).fill().map(() => Array(10).fill(0));
-
-        function createGrid(id, isEnemy) {
+        function create(id, isE) {
             const b = document.getElementById(id);
-            for (let y = 0; y < 10; y++) {
-                for (let x = 0; x < 10; x++) {
-                    const c = document.createElement('div'); c.className = 'cell';
-                    c.dataset.x = x; c.dataset.y = y;
-                    c.onclick = () => isEnemy ? fire(x, y) : place(x, y);
-                    b.appendChild(c);
-                }
+            for(let i=0; i<100; i++) {
+                const c = document.createElement('div'); c.className='cell';
+                const x = i%10, y = Math.floor(i/10);
+                c.dataset.x = x; c.dataset.y = y;
+                c.onclick = () => isE ? shoot(x, y) : place(x, y);
+                b.appendChild(c);
             }
         }
-        createGrid('my-board', false); createGrid('enemy-board', true);
+        create('my-board', 0); create('enemy-board', 1);
 
-        function toggleOrient() {
-            if(phase !== "placement") return;
-            isHor = !isHor;
-            document.getElementById('orient-text').innerText = isHor ? "Горизонтально" : "Вертикально";
-        }
-
-        function resetShips() {
-            if(phase !== "placement") return;
-            currentShipIdx = 0; fleet = []; grid = Array(10).fill().map(() => Array(10).fill(0));
-            document.querySelectorAll('#my-board .cell').forEach(c => { c.className = 'cell'; });
-            updateUI();
-        }
-
-        function updateUI() {
-            const info = document.getElementById('ship-info');
-            const btn = document.getElementById('start-btn');
-            if (currentShipIdx < shipsToPlace.length) {
-                info.innerText = `Ставимо корабель: ${shipsToPlace[currentShipIdx]} палуб(и)`;
-                btn.classList.add('hidden');
-            } else {
-                info.innerText = "Флот готовий!";
-                btn.classList.remove('hidden');
-            }
-        }
-
-        function place(x, y) {
-            if (phase !== "placement" || currentShipIdx >= shipsToPlace.length) return;
-            const len = shipsToPlace[currentShipIdx];
-            if (checkValid(x, y, len, isHor)) {
-                fleet.push({x, y, length: len, is_horizontal: isHor});
-                for (let i = 0; i < len; i++) {
-                    let cx = isHor ? x + i : x, cy = isHor ? y : y + i;
-                    grid[cy][cx] = 1;
-                    const cell = document.querySelector(`#my-board .cell[data-x='${cx}'][data-y='${cy}']`);
-                    if (len === 1) cell.classList.add('ship-one');
-                    else {
-                        if (i === 0) cell.classList.add('ship-top');
-                        else if (i === len - 1) cell.classList.add('ship-bottom');
-                        else cell.classList.add('ship-center');
-                        if (isHor) cell.classList.add('horizontal');
-                    }
-                }
-                currentShipIdx++; updateUI();
-            }
+        function toggleOrient() { isHor = !isHor; document.getElementById('ot').innerText = isHor ? 'ГОР' : 'ВЕРТ'; }
+        
+        function resetPlacement() {
+            curIdx = 0; fleet = []; grid = Array(10).fill().map(()=>Array(10).fill(0));
+            document.querySelectorAll('#my-board .cell').forEach(c => c.className = 'cell');
+            document.getElementById('confirm-btn').classList.add('hidden');
+            document.getElementById('info').innerText = `ОПЕРАЦІЯ: РОЗСТАВКА (4 ПАЛУБИ)`;
         }
 
         function checkValid(x, y, len, hor) {
@@ -175,51 +135,85 @@
             return true;
         }
 
-        function confirmShips() {
-            ws.send(JSON.stringify({ action: "place_ships", ships: fleet }));
-            document.getElementById('placement-panel').classList.add('hidden');
-            document.getElementById('status').innerText = "Чекаємо супротивника...";
-        }
+        function place(x, y) {
+            if(phase != 'placement' || curIdx >= 10) return;
+            let len = shipLengths[curIdx];
+            if (!checkValid(x, y, len, isHor)) return;
 
-        function connect() {
-            ws = new WebSocket(`ws://${window.location.host}/ws/game/${room}?mode=${mode}&nickname=${nick}`);
-            ws.onmessage = (e) => {
-                const d = JSON.parse(e.data);
-                if (d.type === "system") document.getElementById('status').innerText = d.message;
-                else if (d.type === "game_phase") {
-                    phase = d.phase;
-                    document.getElementById('status').innerText = d.message;
-                    if (phase === "placement") document.getElementById('placement-panel').classList.remove('hidden');
-                    else if (phase === "playing") document.getElementById('placement-panel').classList.add('hidden');
+            fleet.push({x, y, length: len, is_horizontal: isHor});
+            for(let i=0; i<len; i++) {
+                let cx = isHor ? x+i : x, cy = isHor ? y : y+i;
+                const cell = document.querySelector(`#my-board .cell[data-x='${cx}'][data-y='${cy}']`);
+                if(len==1) cell.classList.add('ship-one');
+                else {
+                    if(i==0) cell.classList.add('ship-top');
+                    else if(i==len-1) cell.classList.add('ship-bottom');
+                    else cell.classList.add('ship-center');
+                    if(isHor) cell.classList.add('horizontal');
                 }
-                else if (d.type === "turn") {
-                    isTurn = d.is_your_turn;
-                    document.getElementById('status').innerText = isTurn ? "Твій хід! Вогонь!" : "Ворог цілиться...";
-                    document.getElementById('status').style.color = isTurn ? "#27ae60" : "#f1c40f";
-                }
-                else if (d.type === "shoot_result") updateGrid(d);
-                else if (d.type === "game_over") { alert(d.message); window.location.href = "index.html"; }
-                else if (d.type === "error") alert(d.message);
-            };
-        }
-
-        function fire(x, y) { if (phase === "playing" && isTurn) ws.send(JSON.stringify({ action: "shoot", x, y })); }
-
-        function updateGrid(d) {
-            const boardName = d.is_mine ? "my-board" : "enemy-board";
-            const cell = document.querySelector(`#${boardName} .cell[data-x='${d.x}'][data-y='${d.y}']`);
-            
-            if (d.status === "Мимо") cell.classList.add('miss');
-            else cell.classList.add('hit');
-
-            if (d.auto_misses) {
-                d.auto_misses.forEach(([mx, my]) => {
-                    const c = document.querySelector(`#${boardName} .cell[data-x='${mx}'][data-y='${my}']`);
-                    if (c) c.classList.add('miss');
-                });
+                grid[cy][cx] = 1;
+            }
+            curIdx++;
+            if(curIdx < 10) {
+                document.getElementById('info').innerText = `СТАВИМО: ${shipLengths[curIdx]} ПАЛУБ`;
+            } else {
+                document.getElementById('info').innerText = 'ФЛОТ УКОМПЛЕКТОВАНО';
+                document.getElementById('confirm-btn').classList.remove('hidden');
             }
         }
-        connect();
+
+        function autoPlace() {
+            resetPlacement();
+            let attempts = 0;
+            while(curIdx < 10 && attempts < 2000) {
+                let rx = Math.floor(Math.random() * 10);
+                let ry = Math.floor(Math.random() * 10);
+                isHor = Math.random() > 0.5;
+                place(rx, ry);
+                attempts++;
+            }
+        }
+
+        function confirmShips() { 
+            ws.send(JSON.stringify({action:'place_ships', ships:fleet})); 
+            document.getElementById('placement').classList.add('hidden'); 
+        }
+
+        function shoot(x, y) { if(isTurn && phase == 'playing') ws.send(JSON.stringify({action:'shoot', x, y})); }
+        
+        const wsUrl = `ws://${location.host}/ws/game/${p.get('room')}?mode=${p.get('mode')}&nickname=${p.get('nickname')}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onmessage = (e) => {
+            const d = JSON.parse(e.data);
+            if(d.type=='game_phase') { 
+                phase=d.phase; 
+                document.getElementById('status').innerText=d.message; 
+                if(phase=='placement') document.getElementById('placement').classList.remove('hidden'); 
+            }
+            if(d.type=='turn') { 
+                isTurn=d.is_your_turn; 
+                document.getElementById('status').innerText=isTurn?'ТВІЙ ХІД! ВОГОНЬ!':'СУПРОТИВНИК ЦІЛИТЬСЯ...'; 
+                document.getElementById('status').style.color = isTurn ? '#0f0' : '#888';
+            }
+            if(d.type=='shoot_result') {
+                const b = d.is_mine?'my-board':'enemy-board';
+                const c = document.querySelector(`#${b} .cell[data-x='${d.x}'][data-y='${d.y}']`);
+                
+                if(d.status=='Мимо') {
+                    c.classList.add('miss'); 
+                } else if (d.status=='Влучив' || d.status=='Потоплений') {
+                    c.classList.add('hit');
+                }
+                
+                if(d.auto_misses) d.auto_misses.forEach(([mx, my]) => {
+                    const adjCell = document.querySelector(`#${b} .cell[data-x='${mx}'][data-y='${my}']`);
+                    if(adjCell) adjCell.classList.add('miss');
+                });
+            }
+            if(d.type=='game_over') { alert(d.message); location.href='index.html'; }
+            if(d.type=='error') alert(d.message);
+        };
     </script>
 </body>
 </html>
