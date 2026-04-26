@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Морський Бій - Тест Бекенду</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
+        .game-container { display: flex; justify-content: center; gap: 50px; margin-top: 20px; }
+        .board { display: grid; grid-template-columns: repeat(10, 30px); grid-template-rows: repeat(10, 30px); gap: 2px; background: #444; padding: 2px; }
+        .cell { width: 30px; height: 30px; background: #0077be; cursor: pointer; border-radius: 2px; }
+        .cell:hover { background: #0099ff; }
+        
+        /* Кольори для різних станів клітинок */
+        .cell.ship { background: #888; } /* Так ми потім замінимо на картинку корабля */
+        .cell.miss { background: #555; cursor: not-allowed; }
+        .cell.hit { background: #ff4444; cursor: not-allowed; }
+        .cell.sunk { background: #8b0000; cursor: not-allowed; }
+        
+        #status { margin: 20px; font-size: 24px; font-weight: bold; color: #ffcc00; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>Морський Бій (Прототип)</h1>
+    <div id="status">Підключення до сервера...</div>
+    
+    <button id="ready-btn" style="display: none;" onclick="sendFleet()">Я готовий (Відправити кораблі)</button>
+
+    <div class="game-container">
+        <div>
+            <h3>Моє поле</h3>
+            <div id="my-board" class="board"></div>
+        </div>
+        <div>
+            <h3>Поле ворога</h3>
+            <div id="enemy-board" class="board"></div>
+        </div>
+    </div>
+
+    <script>
+        // Створюємо сітки 10x10
+        function createBoard(boardId, isEnemy) {
+            const board = document.getElementById(boardId);
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    if (isEnemy) {
+                        cell.onclick = () => shoot(x, y);
+                    }
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        createBoard('my-board', false);
+        createBoard('enemy-board', true);
+
+        // Мережева логіка
+        let ws;
+        let isMyTurn = false;
+        let gamePhase = "waiting"; 
+
+        // Підключаємося до локального сервера (заміни room1 на будь-який ID)
+        function connect() {
+            // Беремо назву кімнати з URL (наприклад, ?room=alpha)
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomId = urlParams.get('room') || 'room1';
+            
+            // Динамічно формуємо адресу вебсокета
+            const wsUrl = `ws://${window.location.host}/ws/game/${roomId}`;
+            ws = new WebSocket(wsUrl);
+            
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "system") {
+                document.getElementById('status').innerText = data.message;
+                } 
+                else if (data.type === "game_over") {
+                    // Показываем всплывающее окно с результатом (победа/поражение)
+                    alert(data.message);
+                    // Перенаправляем пользователя обратно в главное меню!
+                    window.location.href = "index.html";
+                }
+                else if (data.type === "game_phase") {
+                    document.getElementById('status').innerText = data.message;
+                    gamePhase = data.phase;
+                    if (gamePhase === "placement") {
+                        document.getElementById('ready-btn').style.display = "inline-block";
+                    } else {
+                        document.getElementById('ready-btn').style.display = "none";
+                    }
+                }
+                else if (data.type === "turn") {
+                    isMyTurn = data.is_your_turn;
+                    document.getElementById('status').innerText = isMyTurn ? "Твій хід! Стріляй." : "Хід супротивника. Чекай...";
+                }
+                else if (data.type === "shoot_result") {
+                    updateBoard(data);
+                }
+            };
+        }
+
+        // Відправка хардкодного флоту для швидкого тестування бекенду
+        function sendFleet() {
+            // Щоб не писати складний Drag&Drop зараз, просто відправляємо валідні координати 10 кораблів
+            const fleet = [
+                {x: 0, y: 0, length: 4, is_horizontal: true}, // Лінкор (4)
+                {x: 0, y: 2, length: 3, is_horizontal: true}, // Крейсер 1 (3)
+                {x: 0, y: 4, length: 3, is_horizontal: true}, // Крейсер 2 (3)
+                {x: 0, y: 6, length: 2, is_horizontal: true}, // Есмінець 1 (2)
+                {x: 4, y: 6, length: 2, is_horizontal: true}, // Есмінець 2 (2)
+                {x: 8, y: 6, length: 2, is_horizontal: true}, // Есмінець 3 (2)
+                {x: 0, y: 8, length: 1, is_horizontal: true}, // Катер 1 (1)
+                {x: 2, y: 8, length: 1, is_horizontal: true}, // Катер 2 (1)
+                {x: 4, y: 8, length: 1, is_horizontal: true}, // Катер 3 (1)
+                {x: 6, y: 8, length: 1, is_horizontal: true}  // Катер 4 (1)
+            ];
+
+            ws.send(JSON.stringify({ action: "place_ships", ships: fleet }));
+            document.getElementById('ready-btn').style.display = "none";
+            document.getElementById('status').innerText = "Чекаємо на супротивника...";
+
+            // Візуалізуємо свій флот локально
+            fleet.forEach(ship => {
+                for (let i = 0; i < ship.length; i++) {
+                    const cx = ship.is_horizontal ? ship.x + i : ship.x;
+                    const cy = ship.is_horizontal ? ship.y : ship.y + i;
+                    const cell = document.querySelector(`#my-board .cell[data-x='${cx}'][data-y='${cy}']`);
+                    if(cell) cell.classList.add('ship');
+                }
+            });
+        }
+
+        // Відправка пострілу
+        function shoot(x, y) {
+            if (gamePhase !== "playing") return alert("Гра ще не почалася!");
+            if (!isMyTurn) return alert("Зараз не твій хід!");
+            
+            ws.send(JSON.stringify({ action: "shoot", x: x, y: y }));
+        }
+
+        // Оновлення клітинок після пострілу
+        function updateBoard(data) {
+            const boardId = data.is_mine ? 'my-board' : 'enemy-board';
+            const cell = document.querySelector(`#${boardId} .cell[data-x='${data.x}'][data-y='${data.y}']`);
+            
+            if (data.status === "Мимо") {
+                cell.classList.add('miss');
+            } else if (data.status === "Влучив" || data.status === "Потоплений") {
+                cell.classList.add('hit');
+                // Якщо потоплений, можна додати додаткову логіку, щоб зафарбувати весь корабель
+            }
+        }
+
+        // Запускаємо підключення
+        connect();
+    </script>
+</body>
+</html>

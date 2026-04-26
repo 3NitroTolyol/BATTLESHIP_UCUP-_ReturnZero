@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Морський Бій - Меню</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a1a; color: white; padding-top: 100px; }
+        .menu-box { background: #333; padding: 40px; border-radius: 10px; display: inline-block; }
+        input, button { padding: 10px; font-size: 18px; margin: 10px; border-radius: 5px; border: none; }
+        button { background: #0077be; color: white; cursor: pointer; }
+        button:hover { background: #0099ff; }
+    </style>
+</head>
+<body>
+    <div class="menu-box">
+        <h1>⚓ UCUP Морський Бій ⚓</h1>
+        <p>Введіть назву кімнати, щоб створити її або приєднатися до друга:</p>
+        <input type="text" id="roomName" placeholder="Наприклад: alpha" value="room1">
+        <br>
+        <button onclick="startGame()">У бій!</button>
+    </div>
+
+    <script>
+        function startGame() {
+            const room = document.getElementById("roomName").value;
+            if (room.trim() !== "") {
+                window.location.href = `game.html?room=${room}`;
+            }
+        }
+    </script>
+</body>
+</html>
