@@ -8,69 +8,42 @@
         :root { --color-bg: #080808; --color-text: #ffffff; --color-text-hover: #00ff00; --font-main: 'Press Start 2P', cursive; }
         body { font-family: var(--font-main); text-align: center; background: var(--color-bg); color: white; margin: 0; padding: 20px; font-size: 10px; }
         
-        /* Поле та базова клітинка */
-        .board { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 0; background: #111; padding: 5px; border: 3px solid #222; }
-        .cell { 
-            width: 35px; height: 35px; 
-            background-image: url('/assets/Blank Square.png'); 
-            background-size: 100% 100%; 
-            position: relative; 
-            image-rendering: pixelated; 
-            cursor: pointer; 
+        .back-btn { position: absolute; top: 20px; left: 20px; font-size: 12px; color: #888; background: transparent; border: 2px solid #444; padding: 10px; cursor: pointer; z-index: 1000; font-family: inherit; }
+        .back-btn:hover { color: #ff3333; border-color: #ff3333; }
+
+        /* Поле 11х11 (з координатами) */
+        .board { 
+            display: grid; 
+            grid-template-columns: 30px repeat(10, 35px); 
+            grid-template-rows: 30px repeat(10, 35px); 
+            gap: 0; background: #111; padding: 5px; border: 3px solid #222; 
         }
         
-        /* КОРАБЛІ: Множинні фони. Першим йде корабель, другим - вода. */
-        .ship-one { 
-            background-image: url('/assets/ShipOne.png'), url('/assets/Blank Square.png') !important; 
-            background-size: 85% 85%, 100% 100% !important; 
-            background-position: center, center !important; 
-            background-repeat: no-repeat !important;
+        .coord-label { 
+            display: flex; justify-content: center; align-items: center; 
+            color: #555; font-size: 10px; user-select: none; 
         }
-        .ship-top { 
-            background-image: url('/assets/ShipTop.png'), url('/assets/Blank Square.png') !important; 
-            background-size: 85% 95%, 100% 100% !important; 
-            background-position: center bottom, center !important; 
-            background-repeat: no-repeat !important;
-        }
-        .ship-center { 
-            background-image: url('/assets/ShipCenter.png'), url('/assets/Blank Square.png') !important; 
-            background-size: 85% 100%, 100% 100% !important; 
-            background-position: center, center !important; 
-            background-repeat: no-repeat !important;
-        }
-        .ship-bottom { 
-            background-image: url('/assets/ShipBottom.png'), url('/assets/Blank Square.png') !important; 
-            background-size: 85% 95%, 100% 100% !important; 
-            background-position: center top, center !important; 
-            background-repeat: no-repeat !important;
-        }
+
+        .cell { width: 35px; height: 35px; background-image: url('/assets/Blank Square.png'); background-size: 100% 100%; position: relative; image-rendering: pixelated; cursor: pointer; transition: filter 0.1s; }
+        
+        .ship-one { background-image: url('/assets/ShipOne.png'), url('/assets/Blank Square.png') !important; background-size: 85% 85%, 100% 100% !important; background-position: center, center !important; background-repeat: no-repeat !important; }
+        .ship-top { background-image: url('/assets/ShipTop.png'), url('/assets/Blank Square.png') !important; background-size: 85% 95%, 100% 100% !important; background-position: center bottom, center !important; background-repeat: no-repeat !important; }
+        .ship-center { background-image: url('/assets/ShipCenter.png'), url('/assets/Blank Square.png') !important; background-size: 85% 100%, 100% 100% !important; background-position: center, center !important; background-repeat: no-repeat !important; }
+        .ship-bottom { background-image: url('/assets/ShipBottom.png'), url('/assets/Blank Square.png') !important; background-size: 85% 95%, 100% 100% !important; background-position: center top, center !important; background-repeat: no-repeat !important; }
         
         .horizontal { transform: rotate(-90deg); }
         
-        /* ФІКС ПОПАДАННЯ: Заливаємо фон червоним і прибираємо картинку корабля знизу */
-        .cell.hit {
-            background-color: #ee2222 !important; 
-            background-image: none !important; 
-        }
-
-        /* Накладаємо текстуру вибуху поверх червоного фону */
+        .cell.hit { background-color: #ee2222 !important; background-image: none !important; }
         .cell.hit::before { 
-            content: ""; 
-            position: absolute; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background-image: url('/assets/Square Shoot.png') !important; 
-            background-size: 100% 100% !important; 
-            background-position: center !important; 
-            background-repeat: no-repeat !important;
-            z-index: 100; 
-            display: block !important;
-            transform: rotate(0deg) !important; 
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background-image: url('/assets/Square Shoot.png') !important; background-size: 100% 100% !important; 
+            background-position: center !important; background-repeat: no-repeat !important;
+            z-index: 100; display: block !important; transform: rotate(0deg) !important; 
         }
-        
         .cell.miss::after { content: "•"; color: #666; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 24px; }
         
-        /* Інтерфейс */
+        .super-hover { background-color: rgba(255, 0, 255, 0.4) !important; box-shadow: inset 0 0 10px #ff00ff; z-index: 50;}
+        
         .btn { padding: 15px; margin: 5px; cursor: pointer; font-family: inherit; background: transparent; border: 2px solid white; color: white; transition: 0.2s;}
         .btn:hover { color: var(--color-text-hover); border-color: var(--color-text-hover); }
         .btn-green { border-color: var(--color-text-hover); color: var(--color-text-hover); }
@@ -80,14 +53,25 @@
     </style>
 </head>
 <body>
+
+    <audio id="battleMusic" loop>
+        <source src="battle.mp3" type="audio/mpeg">
+    </audio>
+
+    <button class="back-btn" onclick="location.href='index.html'">◀ В МЕНЮ</button>
     <h2 id="status" style="color: #0f0; margin-bottom: 30px;">ПІДКЛЮЧЕННЯ...</h2>
     
     <div id="placement" class="hidden controls-panel">
-        <p id="info" style="margin-bottom: 15px; color: #0f0;">ОПЕРАЦІЯ: РОЗСТАВКА (4 ПАЛУБИ)</p>
+        <p id="info" style="margin-bottom: 15px; color: #0f0;">ОПЕРАЦІЯ: РОЗСТАВКА</p>
         <button class="btn" onclick="toggleOrient()">ОРІЄНТАЦІЯ: <span id="ot">ГОР</span></button>
         <button class="btn btn-green" onclick="autoPlace()">АВТОРОЗСТАНОВКА</button>
         <button class="btn" onclick="resetPlacement()">СКИНУТИ</button>
         <button id="confirm-btn" class="btn hidden" onclick="confirmShips()" style="background: #004400; color: #0f0;">ПІДТВЕРДИТИ ФЛОТ</button>
+    </div>
+
+    <div id="combat-panel" class="hidden controls-panel" style="border-color: #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.2);">
+        <p style="margin-bottom: 15px; color: #ff00ff;">АРСЕНАЛ</p>
+        <button id="super-btn" class="btn" style="border-color: #ff00ff; color: #ff00ff;" onclick="toggleSuper()">СУПЕРУДАР (1)</button>
     </div>
 
     <div style="display:flex; justify-content:center; gap:60px;">
@@ -96,31 +80,75 @@
     </div>
 
     <script>
+        // --- ЛОГІКА МУЗИКИ ---
+        const battleMusic = document.getElementById('battleMusic');
+        let audioStarted = false;
+        
+        // Запуск музики по першому кліку на сторінці
+        document.body.addEventListener('click', () => {
+            if (!audioStarted) {
+                battleMusic.volume = 0.4; // Гучність 40%, щоб не глушити ефекти
+                battleMusic.play().catch(e => console.log("Audio play blocked by browser:", e));
+                audioStarted = true;
+            }
+        }, { once: true });
+
+
         const p = new URLSearchParams(window.location.search);
         let ws, phase, isTurn, fleet = [], curIdx = 0, isHor = true, grid = Array(10).fill().map(()=>Array(10).fill(0));
         const shipLengths = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+        
+        let isSuperActive = false;
+        let superUsed = false;
 
         function create(id, isE) {
             const b = document.getElementById(id);
-            for(let i=0; i<100; i++) {
-                const c = document.createElement('div'); c.className='cell';
-                const x = i%10, y = Math.floor(i/10);
-                c.dataset.x = x; c.dataset.y = y;
-                c.onclick = () => isE ? shoot(x, y) : place(x, y);
-                b.appendChild(c);
+            const letters = ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            
+            for(let i=0; i<11; i++) {
+                const d = document.createElement('div');
+                d.className = 'coord-label'; d.innerText = letters[i];
+                b.appendChild(d);
+            }
+
+            for(let y=0; y<10; y++) {
+                const num = document.createElement('div');
+                num.className = 'coord-label'; num.innerText = y + 1;
+                b.appendChild(num);
+                
+                for(let x=0; x<10; x++) {
+                    const c = document.createElement('div'); c.className='cell';
+                    c.dataset.x = x; c.dataset.y = y;
+                    
+                    c.onclick = () => isE ? shoot(x, y) : place(x, y);
+                    
+                    c.onmouseenter = () => {
+                        if(isE && isSuperActive && !superUsed && phase === 'playing') {
+                            for(let dx=-1; dx<=1; dx++) {
+                                for(let dy=-1; dy<=1; dy++) {
+                                    let hc = document.querySelector(`#enemy-board .cell[data-x='${x+dx}'][data-y='${y+dy}']`);
+                                    if(hc) hc.classList.add('super-hover');
+                                }
+                            }
+                        }
+                    };
+                    c.onmouseleave = () => {
+                        document.querySelectorAll('#enemy-board .cell').forEach(cell => cell.classList.remove('super-hover'));
+                    };
+
+                    b.appendChild(c);
+                }
             }
         }
+        
         create('my-board', 0); create('enemy-board', 1);
 
         function toggleOrient() { isHor = !isHor; document.getElementById('ot').innerText = isHor ? 'ГОР' : 'ВЕРТ'; }
-        
         function resetPlacement() {
             curIdx = 0; fleet = []; grid = Array(10).fill().map(()=>Array(10).fill(0));
             document.querySelectorAll('#my-board .cell').forEach(c => c.className = 'cell');
             document.getElementById('confirm-btn').classList.add('hidden');
-            document.getElementById('info').innerText = `ОПЕРАЦІЯ: РОЗСТАВКА (4 ПАЛУБИ)`;
         }
-
         function checkValid(x, y, len, hor) {
             for (let i = 0; i < len; i++) {
                 let cx = hor ? x + i : x, cy = hor ? y : y + i;
@@ -134,12 +162,10 @@
             }
             return true;
         }
-
         function place(x, y) {
             if(phase != 'placement' || curIdx >= 10) return;
             let len = shipLengths[curIdx];
             if (!checkValid(x, y, len, isHor)) return;
-
             fleet.push({x, y, length: len, is_horizontal: isHor});
             for(let i=0; i<len; i++) {
                 let cx = isHor ? x+i : x, cy = isHor ? y : y+i;
@@ -154,24 +180,11 @@
                 grid[cy][cx] = 1;
             }
             curIdx++;
-            if(curIdx < 10) {
-                document.getElementById('info').innerText = `СТАВИМО: ${shipLengths[curIdx]} ПАЛУБ`;
-            } else {
-                document.getElementById('info').innerText = 'ФЛОТ УКОМПЛЕКТОВАНО';
-                document.getElementById('confirm-btn').classList.remove('hidden');
-            }
+            if(curIdx == 10) document.getElementById('confirm-btn').classList.remove('hidden');
         }
-
         function autoPlace() {
-            resetPlacement();
-            let attempts = 0;
-            while(curIdx < 10 && attempts < 2000) {
-                let rx = Math.floor(Math.random() * 10);
-                let ry = Math.floor(Math.random() * 10);
-                isHor = Math.random() > 0.5;
-                place(rx, ry);
-                attempts++;
-            }
+            resetPlacement(); let attempts = 0;
+            while(curIdx < 10 && attempts < 2000) { place(Math.floor(Math.random() * 10), Math.floor(Math.random() * 10), isHor = Math.random() > 0.5); attempts++; }
         }
 
         function confirmShips() { 
@@ -179,7 +192,32 @@
             document.getElementById('placement').classList.add('hidden'); 
         }
 
-        function shoot(x, y) { if(isTurn && phase == 'playing') ws.send(JSON.stringify({action:'shoot', x, y})); }
+        function toggleSuper() {
+            if (superUsed) return;
+            isSuperActive = !isSuperActive;
+            const btn = document.getElementById('super-btn');
+            btn.style.background = isSuperActive ? '#ff00ff' : 'transparent';
+            btn.style.color = isSuperActive ? '#000' : '#ff00ff';
+        }
+
+        function shoot(x, y) { 
+            if(isTurn && phase == 'playing') {
+                if (isSuperActive && !superUsed) {
+                    ws.send(JSON.stringify({action:'super_shoot', x: x, y: y}));
+                    superUsed = true;
+                    isSuperActive = false;
+                    const btn = document.getElementById('super-btn');
+                    btn.innerText = "СУПЕРУДАР (0)";
+                    btn.style.background = "transparent";
+                    btn.style.color = "#555";
+                    btn.style.borderColor = "#555";
+                    btn.style.cursor = "not-allowed";
+                    document.querySelectorAll('#enemy-board .cell').forEach(cell => cell.classList.remove('super-hover'));
+                } else {
+                    ws.send(JSON.stringify({action:'shoot', x: x, y: y})); 
+                }
+            }
+        }
         
         const wsUrl = `ws://${location.host}/ws/game/${p.get('room')}?mode=${p.get('mode')}&nickname=${p.get('nickname')}`;
         ws = new WebSocket(wsUrl);
@@ -190,6 +228,7 @@
                 phase=d.phase; 
                 document.getElementById('status').innerText=d.message; 
                 if(phase=='placement') document.getElementById('placement').classList.remove('hidden'); 
+                if(phase=='playing') document.getElementById('combat-panel').classList.remove('hidden');
             }
             if(d.type=='turn') { 
                 isTurn=d.is_your_turn; 
@@ -199,13 +238,8 @@
             if(d.type=='shoot_result') {
                 const b = d.is_mine?'my-board':'enemy-board';
                 const c = document.querySelector(`#${b} .cell[data-x='${d.x}'][data-y='${d.y}']`);
-                
-                if(d.status=='Мимо') {
-                    c.classList.add('miss'); 
-                } else if (d.status=='Влучив' || d.status=='Потоплений') {
-                    c.classList.add('hit');
-                }
-                
+                if(d.status=='Мимо') { c.classList.add('miss'); } 
+                else if (d.status=='Влучив' || d.status=='Потоплений') { c.classList.add('hit'); }
                 if(d.auto_misses) d.auto_misses.forEach(([mx, my]) => {
                     const adjCell = document.querySelector(`#${b} .cell[data-x='${mx}'][data-y='${my}']`);
                     if(adjCell) adjCell.classList.add('miss');

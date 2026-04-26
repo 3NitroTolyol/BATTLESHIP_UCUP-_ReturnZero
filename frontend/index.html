@@ -30,7 +30,6 @@
             align-items: center;
         }
 
-        /* АНАЛОГОВЫЙ ШУМ И CRT ЭФФЕКТЫ */
         .crt::before {
             content: " ";
             display: block;
@@ -67,50 +66,60 @@
             display: flex;
             flex-direction: column;
             gap: clamp(30px, 5vw, 60px);
+            width: clamp(320px, 40vw, 550px);
         }
 
-        /* ЛОГОТИП (Каждая буква отделена для взрыва) */
         .logo {
             font-size: clamp(20px, 4vw, 44px);
             user-select: none;
             display: flex;
             align-items: center;
             white-space: nowrap;
+            min-height: 50px;
         }
 
         .normal-letter {
             display: inline-block;
-            transition: color 0.2s;
+            transition: color 0.2s, opacity 0.2s;
         }
         
-        .normal-letter.unlocked {
-            cursor: crosshair;
-        }
-        
-        .normal-letter.unlocked:hover {
-            color: var(--color-hit); /* Подсказка игроку, что теперь их можно взрывать */
-        }
+        .normal-letter.unlocked { cursor: crosshair; }
+        .normal-letter.unlocked:hover { color: var(--color-hit); }
 
         .ship-letter {
-            width: clamp(10px, 2vw, 16px);
-            height: clamp(25px, 5vw, 40px);
+            width: 14px;
+            height: 35px;
+            display: inline-block; 
             color: var(--color-text);
             cursor: crosshair;
-            margin: 0 8px; /* Немного увеличил отступ для баланса */
-            transition: color 0.2s;
+            margin: 0 8px;
+            transition: color 0.2s, opacity 0.2s;
             shape-rendering: crispEdges;
+            flex-shrink: 0;
         }
         
-        .ship-letter:hover {
-            color: var(--color-text-hover);
+        .ship-letter:hover { color: var(--color-text-hover); }
+
+        .menu-container {
+            position: relative;
+            min-height: 250px;
         }
 
-        /* МЕНЮ */
         .menu {
             display: flex;
             flex-direction: column;
             gap: clamp(20px, 3vw, 35px);
             align-items: flex-start;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: opacity 0.4s ease;
+        }
+
+        .menu.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .menu-btn {
@@ -122,20 +131,165 @@
             cursor: pointer;
             padding: 5px 10px;
             text-transform: uppercase;
-            transition: color 0.2s ease; 
-            will-change: transform; 
-            width: max-content; /* Гарантирует правильный хитбокс текста */
+            transition: color 0.2s ease, opacity 0.4s ease; 
+            will-change: transform, opacity; 
+            width: max-content;
         }
 
-        /* АДАПТИВНОЕ ДЕМО ПОЛЕ С ИНТЕРАКТИВОМ */
+        .sub-panel {
+            position: absolute;
+            top: clamp(40px, 6vw, 60px);
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(15px, 2.5vw, 30px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease 0.1s, transform 0.4s ease 0.1s;
+            transform: translateY(20px);
+            width: 100%;
+        }
+
+        .sub-panel.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .setting-item label {
+            font-size: clamp(10px, 1.5vw, 16px);
+            color: var(--color-text);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 80%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            background: var(--color-text-hover);
+            cursor: pointer;
+            margin-top: -7px;
+            border-radius: 2px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--color-grid);
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .achievement-tile {
+            border: 2px solid var(--color-miss);
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .achievement-tile.unlocked {
+            border-color: var(--color-text-hover);
+            background: rgba(0, 68, 0, 0.2);
+        }
+
+        .achieve-title { font-size: clamp(10px, 1.2vw, 14px); color: var(--color-text); }
+        .achieve-desc { font-size: clamp(8px, 1vw, 10px); color: #aaa; line-height: 1.4; }
+        .unlocked .achieve-title { color: var(--color-text-hover); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--color-bg);
+            border: 2px solid var(--color-grid);
+            padding: 40px;
+            max-width: 800px;
+            width: 80%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+        }
+
+        .modal-content h2 {
+            color: var(--color-text-hover);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .modal-content p {
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: none; border: none;
+            color: var(--color-text);
+            font-size: 20px; cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .close-btn:hover { color: var(--color-hit); }
+
+        .fleet-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--color-grid);
+        }
+        .fleet-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+        .mini-ship { display: flex; gap: 2px; }
+        .mini-cell { width: 15px; height: 15px; background: var(--color-text); }
+
         .board-wrapper {
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: crosshair;
         }
 
-        .board-wrapper:hover {
-            transform: scale(1.03); /* Реакция на наведение */
-        }
+        .board-wrapper:hover { transform: scale(1.03); }
 
         .demo-board {
             display: grid;
@@ -147,9 +301,7 @@
             transition: box-shadow 0.3s;
         }
 
-        .board-wrapper:hover .demo-board {
-            box-shadow: 0 0 35px rgba(0, 255, 0, 0.2); /* Подсветка при наведении */
-        }
+        .board-wrapper:hover .demo-board { box-shadow: 0 0 35px rgba(0, 255, 0, 0.2); }
 
         .cell {
             border: 1px solid var(--color-grid);
@@ -168,7 +320,6 @@
             border-radius: 50%;
         }
 
-        /* Анимация тряски экрана при клике на поле */
         @keyframes shake {
             0% { transform: scale(1.03) translate(2px, 1px) rotate(0deg); }
             10% { transform: scale(1.03) translate(-1px, -2px) rotate(-1deg); }
@@ -183,11 +334,8 @@
             100% { transform: scale(1.03) translate(1px, -2px) rotate(-1deg); }
         }
 
-        .shake-active {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
+        .shake-active { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 
-        /* ЧАСТИЦЫ ВЗРЫВА */
         .particle {
             position: absolute;
             width: clamp(4px, 1vw, 8px);
@@ -200,114 +348,372 @@
 </head>
 <body class="crt">
     <div class="noise"></div>
+    <audio id="bgMusic" loop>
+        <source src="main_menu.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="container">
         <div class="left-panel">
-            <!-- Название, разбитое на буквы для пасхалки -->
             <div class="logo" id="logoContainer">
-                <span class="normal-letter">B</span>
-                <span class="normal-letter">a</span>
-                <span class="normal-letter">t</span>
-                <span class="normal-letter">t</span>
-                <span class="normal-letter">l</span>
-                <span class="normal-letter">e</span>
-                <span class="normal-letter">s</span>
-                <span class="normal-letter">h</span>
+                <span class="normal-letter" data-letter="1">B</span>
+                <span class="normal-letter" data-letter="2">a</span>
+                <span class="normal-letter" data-letter="3">t</span>
+                <span class="normal-letter" data-letter="4">t</span>
+                <span class="normal-letter" data-letter="5">l</span>
+                <span class="normal-letter" data-letter="6">e</span>
+                <span class="normal-letter" data-letter="7">s</span>
+                <span class="normal-letter" data-letter="8">h</span>
                 <svg class="ship-letter" id="ship1" viewBox="0 0 8 20" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2 0 h4 v2 h2 v16 h-2 v2 h-4 v-2 h-2 v-16 h2 z" fill="currentColor"/>
                 </svg>
-                <span class="normal-letter">p</span>
-                <span class="normal-letter">.</span>
+                <span class="normal-letter" data-letter="9">p</span>
+                <span class="normal-letter" data-letter="10">.</span>
                 <svg class="ship-letter" id="ship2" viewBox="0 0 8 20" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2 0 h4 v2 h2 v16 h-2 v2 h-4 v-2 h-2 v-16 h2 z" fill="currentColor"/>
                 </svg>
-                <span class="normal-letter">o</span>
+                <span class="normal-letter" data-letter="11">o</span>
             </div>
 
-            <!-- Меню -->
-            <div class="menu">
-                <button class="menu-btn" onclick="location.href='game_setup.html'">Грати</button>
-                <button class="menu-btn" onclick="location.href='settings.html'">Налаштування</button>
-                <button class="menu-btn" onclick="location.href='achievements.html'">Досягнення</button>
-                <button class="menu-btn" onclick="location.href='help.html'">Як грати</button>
+            <div class="menu-container">
+                <div class="menu" id="mainMenu">
+                    <button class="menu-btn main-btn" id="btnPlay">Грати</button>
+                    <button class="menu-btn main-btn" id="btnSettings">Налаштування</button>
+                    <button class="menu-btn main-btn" id="btnAchieve">Досягнення</button>
+                    <button class="menu-btn main-btn" id="btnHowTo">Як грати</button>
+                </div>
+
+                <div class="sub-panel" id="settingsPanel">
+                    <div class="setting-item">
+                        <label>Гучність музики</label>
+                        <input type="range" id="volMusic" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    <div class="setting-item">
+                        <label>Гучність звуків</label>
+                        <input type="range" id="volSfx" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    
+                    <button class="menu-btn" id="btnFullscreen" style="color: #00ffff; font-size: clamp(12px, 2vw, 18px); margin-top: 10px;">На весь екран</button>
+                    
+                    <button class="menu-btn" id="btnFreeAchievement" style="color: #ffaa00; font-size: clamp(12px, 2vw, 18px); margin-top: 10px;">Секретна кнопка</button>
+                    <button class="menu-btn back-btn" data-target="btnSettings">Назад</button>
+                </div>
+
+                <div class="sub-panel" id="achievePanel">
+                    <div class="achievements-grid" id="achievementsList">
+                        </div>
+                    <button class="menu-btn back-btn" data-target="btnAchieve" style="margin-top: 20px;">Назад</button>
+                </div>
             </div>
         </div>
 
-        <!-- Обертка поля для анимации тряски и наведения -->
         <div class="board-wrapper" id="boardWrapper">
             <div class="demo-board" id="demoBoard"></div>
         </div>
     </div>
 
+    <div class="modal-overlay" id="howToModal">
+        <div class="modal-content crt">
+            <button class="close-btn" id="closeModal">X</button>
+            <h2>Як грати</h2>
+            <p>Правила гри у класичний морський бій - два гравці (або один якщо обран режим PVE) роставляють свої кораблі на ігровому полі 10 на 10 клітинок, після цього по черзі стріляють "у сліпу" по полю супротивника, намагаючісь вгадати на яких полях противник роставив свої кораблі, та знищити їх. Якщо один з гравців у свій хід попав по кораблю, чи знищив його - тоді він має ще одну спробу пострілу, до тих пір поки не промаже. У грі перемагає той, хто перший знищив усі ворожі кораблі.</p>
+            <p>Правила розстановки - Не можна ставити кораблі у сусідні клітинки, між ними повинна бути дистанція мінімум в одну клітинку. Кораблі можуть бути встановлені вертикально або горизонтально. Кораблі розставляються лише у межах ігрового поля.</p>
+            <p style="color: #ff00ff; text-align: center; margin-top: 20px; font-weight: bold;">У грі також доступний "СУПЕРУДАР" (Атака по області 3x3) один раз за гру!</p>
+            
+            <div class="fleet-info">
+                <div class="fleet-item">
+                    <span>1 шт. (4 кл.):</span>
+                    <div class="mini-ship"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>
+                </div>
+                <div class="fleet-item">
+                    <span>2 шт. (3 кл.):</span>
+                    <div class="mini-ship"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>
+                </div>
+                <div class="fleet-item">
+                    <span>3 шт. (2 кл.):</span>
+                    <div class="mini-ship"><div class="mini-cell"></div><div class="mini-cell"></div></div>
+                </div>
+                <div class="fleet-item">
+                    <span>4 шт. (1 кл.):</span>
+                    <div class="mini-ship"><div class="mini-cell"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        /* =========================================
-           1. ИСПРАВЛЕННЫЙ МАГНИТ (РАССТОЯНИЕ ДО ГРАНИЦ)
-        ========================================= */
+        // --- 1. АУДІО СИСТЕМА ---
+        const bgMusic = document.getElementById('bgMusic');
+        const volMusic = document.getElementById('volMusic');
+        const volSfx = document.getElementById('volSfx');
+        
+        let audioStarted = false;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        let sfxVolume = 0.5;
+
+        document.body.addEventListener('click', () => {
+            if (!audioStarted) {
+                audioCtx.resume();
+                bgMusic.volume = volMusic.value;
+                bgMusic.play().catch(() => {});
+                audioStarted = true;
+            }
+        }, { once: true });
+
+        volMusic.addEventListener('input', (e) => { bgMusic.volume = e.target.value; });
+        volSfx.addEventListener('input', (e) => { sfxVolume = parseFloat(e.target.value); });
+
+        function playClickSfx() {
+            if (!audioCtx || sfxVolume === 0) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(sfxVolume * 0.8, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playHoverSfx() {
+            if (!audioCtx || sfxVolume === 0) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(sfxVolume * 0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playExplosionSfx() {
+            if (!audioCtx || sfxVolume === 0) return;
+            const bufferSize = audioCtx.sampleRate * 0.3; 
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(sfxVolume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        // --- 2. СИСТЕМА ДОСЯГНЕНЬ ---
+        const achievementsData = [
+            { id: 'secret_btn', title: 'Секрет', desc: 'Знайдено приховану кнопку у налаштуваннях' },
+            { id: 'two_ships', title: 'Влучний стрілець', desc: 'Знищено два кораблі у назві гри' },
+            { id: 'all_letters', title: 'Руйнівник', desc: 'Знищено абсолютно всі літери у назві' }
+        ];
+
+        let unlockedAchievements = JSON.parse(localStorage.getItem('bs_achievements')) || [];
+
+        function renderAchievements() {
+            const list = document.getElementById('achievementsList');
+            list.innerHTML = '';
+            achievementsData.forEach(ach => {
+                const isUnlocked = unlockedAchievements.includes(ach.id);
+                const tile = document.createElement('div');
+                tile.className = `achievement-tile ${isUnlocked ? 'unlocked' : ''}`;
+                tile.innerHTML = `
+                    <div class="achieve-title">${isUnlocked ? ach.title : '???'}</div>
+                    <div class="achieve-desc">${isUnlocked ? ach.desc : 'Досягнення заблоковано'}</div>
+                `;
+                list.appendChild(tile);
+            });
+        }
+
+        function unlockAchievement(id) {
+            if (!unlockedAchievements.includes(id)) {
+                unlockedAchievements.push(id);
+                localStorage.setItem('bs_achievements', JSON.stringify(unlockedAchievements));
+                renderAchievements();
+                playClickSfx();
+            }
+        }
+        
+        renderAchievements();
+
+        // --- 3. НАВІГАЦІЯ ТА АНІМАЦІЇ МЕНЮ ---
         const buttons = document.querySelectorAll('.menu-btn');
+        const mainMenu = document.getElementById('mainMenu');
+        const btnSettings = document.getElementById('btnSettings');
+        const btnAchieve = document.getElementById('btnAchieve');
+        const btnPlay = document.getElementById('btnPlay');
+        const btnHowTo = document.getElementById('btnHowTo');
+        
+        const settingsPanel = document.getElementById('settingsPanel');
+        const achievePanel = document.getElementById('achievePanel');
+        const howToModal = document.getElementById('howToModal');
+        
+        let activePanelId = 'mainMenu'; 
+        let targetButtonY = 0;
+        let animatedButton = null;
+
+        buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', playHoverSfx);
+            btn.addEventListener('click', playClickSfx);
+        });
+        document.getElementById('closeModal').addEventListener('mouseenter', playHoverSfx);
+        document.getElementById('closeModal').addEventListener('click', playClickSfx);
+
+        // ЛОГИКА КНОПКИ ИГРАТЬ (СИНХРОНИЗАЦИЯ)
+        btnPlay.addEventListener('click', () => {
+            setTimeout(() => {
+                location.href = 'game_setup.html';
+            }, 300); // Даем 300мс на то, чтобы звук клика успел проиграть
+        });
+
+        // ЛОГИКА FULLSCREEN В НАСТРОЙКАХ
+        const btnFullscreen = document.getElementById('btnFullscreen');
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+                btnFullscreen.textContent = "Віконний режим";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    btnFullscreen.textContent = "На весь екран";
+                }
+            }
+        });
+
+        function openSubPanel(panelToOpen, triggerBtn) {
+            if(activePanelId !== 'mainMenu') return;
+            activePanelId = panelToOpen.id;
+            animatedButton = triggerBtn;
+
+            targetButtonY = btnPlay.getBoundingClientRect().top - triggerBtn.getBoundingClientRect().top;
+            triggerBtn.style.pointerEvents = 'none'; 
+
+            Array.from(mainMenu.children).forEach(btn => {
+                if (btn !== triggerBtn) {
+                    btn.style.opacity = '0';
+                    btn.style.pointerEvents = 'none';
+                }
+            });
+
+            setTimeout(() => { panelToOpen.classList.add('active'); }, 200);
+        }
+
+        function closeSubPanel(panelToClose) {
+            panelToClose.classList.remove('active');
+
+            setTimeout(() => {
+                activePanelId = 'mainMenu';
+                animatedButton = null;
+                
+                btnData.forEach(d => {
+                    if (d.el.parentElement.id === 'mainMenu') {
+                        d.targetX = 0;
+                        d.targetY = 0;
+                        d.currentX = 0;
+                        d.currentY = 0;
+                        d.el.style.transform = `translate(0px, 0px)`;
+                    }
+                });
+
+                Array.from(mainMenu.children).forEach(btn => {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                });
+            }, 400);
+        }
+
+        btnSettings.addEventListener('click', () => openSubPanel(settingsPanel, btnSettings));
+        btnAchieve.addEventListener('click', () => openSubPanel(achievePanel, btnAchieve));
+        
+        document.querySelectorAll('.back-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = e.target.getAttribute('data-target');
+                if (targetId === 'btnSettings') closeSubPanel(settingsPanel);
+                if (targetId === 'btnAchieve') closeSubPanel(achievePanel);
+            });
+        });
+
+        btnHowTo.addEventListener('click', () => howToModal.classList.add('active'));
+        document.getElementById('closeModal').addEventListener('click', () => howToModal.classList.remove('active'));
+        howToModal.addEventListener('click', (e) => {
+            if (e.target === howToModal) howToModal.classList.remove('active');
+        });
+
+        document.getElementById('btnFreeAchievement').addEventListener('click', function() {
+            this.textContent = 'Отримано!';
+            this.style.pointerEvents = 'none';
+            unlockAchievement('secret_btn');
+        });
+
+        // --- 4. МАГНІТ ДЛЯ КНОПОК ---
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
-        const triggerDistance = 120; // Радиус срабатывания уменьшен для точности
+        const triggerDistance = 120;
 
-        const btnData = Array.from(buttons).map(btn => ({
+        const btnData = Array.from(document.querySelectorAll('.menu-btn:not(.back-btn)')).map(btn => ({
             el: btn, currentX: 0, currentY: 0, targetX: 0, targetY: 0, distance: 9999
         }));
 
         document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+            mouseX = e.clientX; mouseY = e.clientY;
         });
 
-        function lerp(start, end, factor) {
-            return start + (end - start) * factor;
-        }
+        function lerp(start, end, factor) { return start + (end - start) * factor; }
 
         function animateButtons() {
             btnData.forEach(data => {
+                if (activePanelId !== 'mainMenu' && data.el.parentElement.id === 'mainMenu' && data.el !== animatedButton) { return; }
+                if (activePanelId !== 'mainMenu' && data.el === animatedButton) {
+                    data.targetX = 0;
+                    data.targetY = targetButtonY;
+                    data.el.style.color = 'var(--color-text-hover)';
+                    data.distance = 9999; 
+                    return; 
+                }
+
                 data.targetX = 0;
                 data.targetY = 0;
                 data.el.style.color = 'var(--color-text)'; 
-                
+
                 const rect = data.el.getBoundingClientRect();
-                
-                // ИСПРАВЛЕНИЕ: Считаем базовые координаты без учета текущего смещения (currentX/Y),
-                // чтобы рамка не "убегала" от мыши, создавая глюки.
                 const baseLeft = rect.left - data.currentX;
                 const baseRight = rect.right - data.currentX;
                 const baseTop = rect.top - data.currentY;
                 const baseBottom = rect.bottom - data.currentY;
 
-                // Считаем расстояние до БЛИЖАЙШЕЙ ГРАНИ прямоугольника, а не до центра
                 const dx = Math.max(baseLeft - mouseX, 0, mouseX - baseRight);
                 const dy = Math.max(baseTop - mouseY, 0, mouseY - baseBottom);
                 data.distance = Math.hypot(dx, dy);
 
-                // Центр нужен только чтобы знать, в какую сторону тянуть
                 data.btnCenterX = baseLeft + (baseRight - baseLeft) / 2;
                 data.btnCenterY = baseTop + (baseBottom - baseTop) / 2;
             });
 
-            const sorted = [...btnData].sort((a, b) => a.distance - b.distance);
+            const activeButtons = btnData.filter(d => activePanelId === 'mainMenu' || d.el.parentElement.classList.contains('sub-panel'));
+            const sorted = [...activeButtons].sort((a, b) => a.distance - b.distance);
 
             for (let i = 0; i < sorted.length; i++) {
                 let data = sorted[i];
-                
                 if (data.distance < triggerDistance) {
                     const pull = 1 - (data.distance / triggerDistance);
-                    
                     if (i === 0) {
                         data.targetX = (mouseX - data.btnCenterX) * 0.3 * pull;
-                        data.targetY = (mouseY - data.btnCenterY) * 0.3 * pull;
+                        data.targetY = (mouseY - data.btnCenterY) * 0.3 * pull; 
                         data.el.style.color = 'var(--color-text-hover)';
-                    } else if (i === 1 && pull > 0.5) {
-                        data.targetX = (mouseX - data.btnCenterX) * 0.08 * pull;
-                        data.targetY = (mouseY - data.btnCenterY) * 0.08 * pull;
                     }
                 }
             }
 
             btnData.forEach(data => {
-                data.currentX = lerp(data.currentX, data.targetX, 0.15);
-                data.currentY = lerp(data.currentY, data.targetY, 0.15);
+                data.currentX = lerp(data.currentX, data.targetX, 0.45);
+                data.currentY = lerp(data.currentY, data.targetY, 0.45);
                 data.el.style.transform = `translate(${data.currentX}px, ${data.currentY}px)`;
             });
 
@@ -316,23 +722,23 @@
         
         animateButtons();
 
-        /* =========================================
-           2. ПАСХАЛКА СО ВЗРЫВАМИ (КОРАБЛИ -> БУКВЫ)
-        ========================================= */
+        // --- 5. ВЗРИВ ЛОГОТИПУ ---
         const shipLetters = document.querySelectorAll('.ship-letter');
         const normalLetters = document.querySelectorAll('.normal-letter');
         let shipsDestroyedCount = 0;
+        let lettersDestroyedCount = 0;
         let titleUnlocked = false;
 
         function createExplosion(x, y, color = '#ffffff') {
-            const particleCount = 12;
+            playExplosionSfx();
+            const particleCount = 15;
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('particle');
                 document.body.appendChild(particle);
 
                 const angle = Math.random() * Math.PI * 2;
-                const velocity = 30 + Math.random() * 60;
+                const velocity = 30 + Math.random() * 80;
                 const tx = Math.cos(angle) * velocity;
                 const ty = Math.sin(angle) * velocity;
 
@@ -343,14 +749,11 @@
                     { transform: 'translate(0, 0) scale(1)', opacity: 1, backgroundColor: '#ffffff' },
                     { backgroundColor: color, offset: 0.5 },
                     { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
-                ], {
-                    duration: 400 + Math.random() * 300,
-                    easing: 'cubic-bezier(0, .9, .57, 1)'
-                }).onfinish = () => particle.remove();
+                ], { duration: 400 + Math.random() * 300, easing: 'cubic-bezier(0, .9, .57, 1)' })
+                .onfinish = () => particle.remove();
             }
         }
 
-        // Взрыв кораблей
         shipLetters.forEach(ship => {
             ship.addEventListener('click', (e) => {
                 if(ship.style.opacity === '0') return;
@@ -360,70 +763,63 @@
                 ship.style.opacity = '0';
                 
                 shipsDestroyedCount++;
-                
-                // Проверка на разблокировку остальных букв
-                if (shipsDestroyedCount >= 2 && !titleUnlocked) {
-                    titleUnlocked = true;
-                    normalLetters.forEach(l => l.classList.add('unlocked'));
+                if (shipsDestroyedCount === 2) {
+                    unlockAchievement('two_ships');
+                    if (!titleUnlocked) {
+                        titleUnlocked = true;
+                        normalLetters.forEach(l => l.classList.add('unlocked'));
+                    }
                 }
                 
-                // Восстановление кораблей через время
-                setTimeout(() => {
-                    ship.style.opacity = '1';
+                setTimeout(() => { 
+                    ship.style.opacity = '1'; 
+                    shipsDestroyedCount--; 
                 }, 5000);
             });
         });
 
-        // Взрыв обычных букв (только после уничтожения кораблей)
         normalLetters.forEach(letter => {
             letter.addEventListener('click', (e) => {
                 if (!titleUnlocked || letter.style.opacity === '0') return;
                 
                 const rect = letter.getBoundingClientRect();
-                // Буквы взрываются белым/серым цветом
                 createExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, '#cccccc');
                 letter.style.opacity = '0';
+                
+                lettersDestroyedCount++;
+                if (lettersDestroyedCount === normalLetters.length) {
+                    unlockAchievement('all_letters');
+                }
 
-                // Восстанавливаем букву
-                setTimeout(() => {
-                    letter.style.opacity = '1';
-                }, 3000);
+                setTimeout(() => { 
+                    letter.style.opacity = '1'; 
+                    lettersDestroyedCount--;
+                }, 4000);
             });
         });
 
-        /* =========================================
-           3. ТРЯСКА ЭКРАНА ПРИ КЛИКЕ НА ПОЛЕ
-        ========================================= */
+        // --- 6. ТРЯСІННЯ ЕКРАНУ ТА АВТОБІЙ ---
         const boardWrapper = document.getElementById('boardWrapper');
-        
         boardWrapper.addEventListener('click', () => {
-            // Перезапуск анимации
+            playExplosionSfx(); 
             boardWrapper.classList.remove('shake-active');
-            void boardWrapper.offsetWidth; // Магия для сброса CSS анимации
+            void boardWrapper.offsetWidth; 
             boardWrapper.classList.add('shake-active');
         });
 
-        /* =========================================
-           4. ДЕМОНСТРАЦИЯ ГЕЙМПЛЕЯ
-        ========================================= */
         const board = document.getElementById('demoBoard');
         const cells = [];
-        const BOARD_SIZE = 100;
-        let shotsFired = 0;
-
-        for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let i = 0; i < 100; i++) {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             board.appendChild(cell);
             cells.push({ element: cell, hit: false });
         }
 
-        function autoPlay() {
+        let shotsFired = 0;
+        setInterval(() => {
             if (shotsFired > 40) {
-                cells.forEach(c => {
-                    c.element.className = 'cell';
-                    c.hit = false;
-                });
+                cells.forEach(c => { c.element.className = 'cell'; c.hit = false; });
                 shotsFired = 0;
                 return;
             }
@@ -437,41 +833,25 @@
 
             let isHit = Math.random() > 0.85; 
 
-            // --- УМНАЯ ПРОВЕРКА ПРАВИЛ (БЕЗ ДИАГОНАЛЕЙ) ---
             if (isHit) {
-                // Находим координаты текущей клетки в сетке 10x10
                 const index = cells.indexOf(randomCell);
                 const row = Math.floor(index / 10);
                 const col = index % 10;
-                
-                // Координаты смещения для 4-х диагоналей
                 const diagonals = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
                 
                 for (let [dr, dc] of diagonals) {
-                    const r = row + dr;
-                    const c = col + dc;
-                    // Проверяем, не вышли ли мы за пределы поля
+                    const r = row + dr; const c = col + dc;
                     if (r >= 0 && r < 10 && c >= 0 && c < 10) {
-                        const neighborIndex = r * 10 + c;
-                        // Если по диагонали уже есть попадание, принудительно делаем промах
-                        if (cells[neighborIndex].element.classList.contains('hit')) {
-                            isHit = false;
-                            break;
+                        if (cells[r * 10 + c].element.classList.contains('hit')) {
+                            isHit = false; break;
                         }
                     }
                 }
             }
-            // ----------------------------------------------
 
-            if (isHit) {
-                randomCell.element.classList.add('hit');
-            } else {
-                randomCell.element.classList.add('miss');
-            }
-        }
-
-        setInterval(autoPlay, 800);
-
+            if (isHit) randomCell.element.classList.add('hit');
+            else randomCell.element.classList.add('miss');
+        }, 800);
     </script>
 </body>
 </html>
